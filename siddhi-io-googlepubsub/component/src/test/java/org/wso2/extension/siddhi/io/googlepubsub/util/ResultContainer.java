@@ -1,10 +1,7 @@
 package org.wso2.extension.siddhi.io.googlepubsub.util;
 
-import com.google.pubsub.v1.PubsubMessage;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -35,16 +32,24 @@ public class ResultContainer {
 
     public void eventReceived(String message) {
         eventCount++;
-        results.add(String.valueOf(message));
+        results.add(message);
         latch.countDown();
     }
 
-    public void eventReceived(PubsubMessage message) throws UnsupportedEncodingException {
-        eventCount++;
-        String message1 = new String(message.getData().toStringUtf8());
-        results.add(message1);
-        latch.countDown();
+    public void waitForResult() {
+        try {
+            latch.await(timeout, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
+
+//    public void eventReceived(PubsubMessage message) throws UnsupportedEncodingException {
+//        eventCount++;
+//        String message1 = new String(message.getData().toStringUtf8());
+//        results.add(message1);
+//        latch.countDown();
+//    }
 
     public Boolean assertMessageContent(String content) {
         try {
@@ -65,6 +70,5 @@ public class ResultContainer {
         }
         return false;
     }
-
 }
 

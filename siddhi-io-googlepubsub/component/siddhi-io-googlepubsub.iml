@@ -91,6 +91,6 @@
     <orderEntry type="library" name="Maven: com.google.auto.value:auto-value:1.4" level="project" />
     <orderEntry type="library" name="Maven: javax.annotation:javax.annotation-api:1.2" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.9" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.wso2.extension.siddhi.map.text:siddhi-map-text:1.0.22" level="project" />
+    <orderEntry type="library" name="Maven: org.wso2.extension.siddhi.map.text:siddhi-map-text:1.0.22" level="project" />
   </component>
 </module>

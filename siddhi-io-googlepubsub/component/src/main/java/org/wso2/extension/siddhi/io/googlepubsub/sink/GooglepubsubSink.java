@@ -37,37 +37,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This is a sample class-level comment, explaining what the extension class does.
+ * Google PubSub handle the google pub sub publishing tasks.
  */
-
-/**
- * Annotation of Siddhi Extension.
- * <pre><code>
- * eg:-
- * {@literal @}Extension(
- * name = "The name of the extension",
- * namespace = "The namespace of the extension",
- * description = "The description of the extension (optional).",
- * //Sink configurations
- * parameters = {
- * {@literal @}Parameter(name = "The name of the first parameter", type = "Supprted parameter types.
- *                              eg:{DataType.STRING,DataType.INT, DataType.LONG etc},dynamic=false ,optinal=true/false ,
- *                              if optional =true then assign default value according the type")
- *   System parameter is used to define common extension wide
- *              },
- * examples = {
- * {@literal @}Example({"Example of the first CustomExtension contain syntax and description.Here,
- *                      Syntax describe default mapping for SourceMapper and description describes
- *                      the output of according this syntax},
- *                      }
- * </code></pre>
- */
-
 @Extension(
         name = "googlepubsub",
         namespace = "sink",
         description = "The Google Pub Sub sink publishes the events into a Google Pub Sub processed by WSO2 Stream " +
-                "Processor. If a topic doesn't exist in the server, Google Pub Sub sink creates a topic.",
+                "Processor. If a topic doesn't exist in the server, Google Pub Sub sink creates a topic and publish" +
+                "messages to that topic.",
         parameters = {
                 @Parameter(
                         name = GooglePubSubConstants.GOOGLEPUBSUB_SERVER_PROJECTID,
@@ -81,16 +58,6 @@ import java.util.concurrent.TimeUnit;
                                 "Only one topic must be specified.",
                         type =  DataType.STRING,
                         dynamic = true),
-
-
-                @Parameter(
-                        name = GooglePubSubConstants.GOOGLEPUBSUB_IDLETIMEOUT,
-                        description = "Idle timeout of the connection.",
-                        type =  DataType.INT,
-                        dynamic = true,
-                        optional = true, defaultValue = "50"),
-
-
 
         },
         examples = {
@@ -110,8 +77,9 @@ import java.util.concurrent.TimeUnit;
 
         }
 )
-
-// for more information refer https://wso2.github.io/siddhi/documentation/siddhi-4.0/#sinks
+/**
+ * Google Pubsub publishing tasks.
+ */
 
 public class GooglepubsubSink extends Sink {
     private static final Logger log = Logger.getLogger(GooglepubsubSink.class);
@@ -127,6 +95,7 @@ public class GooglepubsubSink extends Sink {
     private GoogleCredentials credentials;
     private TopicAdminClient topicAdminClient;
     private Publisher publisher;
+    private TopicAdminSettings topicAdminSettings;
 
     /**
      * Returns the list of classes which this sink can consume.
@@ -222,24 +191,19 @@ public class GooglepubsubSink extends Sink {
             log.error("Error creating a publisher bound to the topic : " + topic);
             throw new GooglePubSubInputAdaptorRuntimeException("Error creating a publisher bound to the topic : " +
                     topic, e);
+        } finally {
+
+            if (publisher != null) {
+                // When finished with the publisher, shutdown to free up resources.
+                try {
+                    publisher.shutdown();
+                    publisher.awaitTermination(1, TimeUnit.MINUTES);
+                } catch (Exception e) {
+                    log.error("Could not shut down the publisher");
+                }
+            }
         }
-//        finally {
-//            // Wait on any pending requests
-//            List<String> messageIds = null;
-//            try {
-//                messageIds = ApiFutures.allAsList(futures).get();
-//            } catch (InterruptedException e) {
-//                log.info("");
-//            } catch (ExecutionException e) {
-//                log.info("");
-//            }
-//
-//            for (String messageId : messageIds) {
-//                log.info("The message is successfully published under id :" + messageId);
-//            }
-//
-//
-//        }
+
     }
 
     /**
@@ -272,9 +236,12 @@ public class GooglepubsubSink extends Sink {
             if (topicAdminClient != null) {
                 topicAdminClient.shutdown();
             }
+
             if (publisher != null) {
                 publisher.shutdown();
-                publisher.awaitTermination(1, TimeUnit.MINUTES);
+                while (!publisher.awaitTermination(1, TimeUnit.MINUTES)) {
+                    Thread.sleep(10);
+                }
             }
 
         } catch (Exception e) {

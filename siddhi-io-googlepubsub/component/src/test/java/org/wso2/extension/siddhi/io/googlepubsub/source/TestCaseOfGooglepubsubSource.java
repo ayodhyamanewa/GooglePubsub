@@ -3,11 +3,9 @@ import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import org.apache.log4j.Logger;
 import org.testng.AssertJUnit;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.extension.siddhi.io.googlepubsub.util.ResultContainer;
 import org.wso2.siddhi.core.SiddhiAppRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.event.Event;
@@ -42,29 +40,12 @@ public class TestCaseOfGooglepubsubSource {
 
     }
 
-    @AfterClass
-    public static void stop() {
-
-        try {
-            if (subscriptionAdminClient != null) {
-                subscriptionAdminClient.close();
-            }
-            if (subscriber != null) {
-                subscriber.stopAsync().awaitTerminated();
-            }
-
-        } catch (Exception e) {
-            log.error("Error disconnecting the receiver", e);
-        }
-    }
-
     /**
      * Test the ability to subscripe to a Google Pub Sub topic and .and receive messages.
      */
     @Test
     public void testGooglePubSubSourceEvent() {
         log.info("Test to receive messages");
-        ResultContainer resultContainer = new ResultContainer(1);
         receivedEventNameList = new ArrayList<>(1);
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime siddhiAppRuntimeSource = siddhiManager.createSiddhiAppRuntime(
@@ -105,7 +86,7 @@ public class TestCaseOfGooglepubsubSource {
         InputHandler fooStream = siddhiAppRuntime.getInputHandler("FooStream");
         siddhiAppRuntime.start();
         try {
-            fooStream.send(new Object[]{"My world"});
+            fooStream.send(new Object[]{"Hiii"});
             SiddhiTestHelper.waitForEvents(waitTime, 1, count, timeout);
         } catch (InterruptedException e) {
             AssertJUnit.fail("Thread sleep was interrupted");

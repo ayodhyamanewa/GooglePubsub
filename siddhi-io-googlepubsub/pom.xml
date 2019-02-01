@@ -35,10 +35,6 @@
                 <version>1.9</version>
             </dependency>
 
-
-
-
-
             <dependency>
                 <groupId>org.wso2.siddhi</groupId>
                 <artifactId>siddhi-core</artifactId>
@@ -97,8 +93,7 @@
             <dependency>
                 <groupId>org.wso2.extension.siddhi.map.text</groupId>
                 <artifactId>siddhi-map-text</artifactId>
-                <version>1.0.22</version>
-                <scope>test</scope>
+                <version>${text.mapper.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
@@ -162,6 +157,7 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <org.testcontainers.version>1.8.0</org.testcontainers.version>
+
         <siddhi.map.json.version>4.0.15</siddhi.map.json.version>
         <siddhi.map.xml.version>4.0.11</siddhi.map.xml.version>
         <text.mapper.version>1.0.22</text.mapper.version>

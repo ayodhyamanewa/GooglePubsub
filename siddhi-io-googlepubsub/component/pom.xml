@@ -120,6 +120,7 @@
                             com.*,
                             org.threeten.*,
                             org.apache.commons.codec.*;
+                            io.grpc.netty.shaded.*;
                         </Private-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Include-Resource>

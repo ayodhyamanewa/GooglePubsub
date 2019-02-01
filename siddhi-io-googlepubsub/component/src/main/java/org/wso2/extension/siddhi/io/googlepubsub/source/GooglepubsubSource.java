@@ -1,16 +1,12 @@
 package org.wso2.extension.siddhi.io.googlepubsub.source;
-import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.api.gax.rpc.ApiException;
+import com.google.api.gax.rpc.StatusCode;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.pubsub.v1.AckReplyConsumer;
-import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
@@ -33,9 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.Map;;
 
 /**
  * This is a sample class-level comment, explaining what the extension class does.
@@ -114,12 +108,6 @@ import java.util.concurrent.LinkedBlockingDeque;
                         type = DataType.STRING
                 ),
 
-
-                @Parameter(
-                        name = GooglePubSubConstants.GOOGLEPUBSUB_IDLETIMEOUT,
-                        description = "Idle timeout of the connection.",
-                        type = DataType.INT,
-                        optional = true, defaultValue = "50"),
 
 
         },
@@ -217,79 +205,69 @@ public class GooglepubsubSource extends Source {
             log.error("Credentials are missing.");
         }
 
-        final BlockingQueue<PubsubMessage> messages = new LinkedBlockingDeque<>();
-
-        class MessageReceiverExample implements MessageReceiver {
-
-            @Override
-            public void receiveMessage(PubsubMessage message, AckReplyConsumer consumer) {
-                try {
-                    sourceEventListener.onEvent("message :" + "\"" + message.getData().toStringUtf8()
-                                    + "\"" + " ", null);
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to pull messages from topic");
-                }
-                consumer.ack();
-            }
-        }
-
-        ExecutorProvider executorProvider =
-                InstantiatingExecutorProvider.newBuilder()
-                        .setExecutorThreadCount(1)
-                        .build();
-
         ProjectTopicName topicName = ProjectTopicName.of(projectid, topicid);
 
         ProjectSubscriptionName subscriptionName = ProjectSubscriptionName.of(
                 projectid, subscriptionid);
         try {
-            // create a pull subscription with default acknowledgement deadline (= 10 seconds)
             SubscriptionAdminSettings subscriptionAdminSettings =
                     SubscriptionAdminSettings.newBuilder()
                             .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
                             .build();
             SubscriptionAdminClient subscriptionAdminClient =
                     SubscriptionAdminClient.create(subscriptionAdminSettings);
-            //  SubscriptionAdminClient subscriptionAdminClient = SubscriptionAdminClient.create();
-            // create a pull subscription with default acknowledgement deadline (= 10 seconds)
+
             Subscription subscription =
                     subscriptionAdminClient.createSubscription(
                             subscriptionName, topicName, PushConfig.getDefaultInstance(), 0);
         } catch (ApiException e) {
-            // example : code = ALREADY_EXISTS(409) implies subscription already exists
+            if (e.getStatusCode().getCode() != StatusCode.Code.ALREADY_EXISTS) {
+                log.error("Check whether you have subscribed for the required topic.");
+            }
 
         } catch (IOException e) {
-            log.error("");
+            log.error("Could not create a subscription for your topic.");
         }
-
-        //System.out.printf(
-        // "Subscription %s:%s created.\n",
-        //subscriptionName.getProject(), subscriptionName.getSubscription());
 
         Subscriber subscriber = null;
-        try {
-            // create a subscriber bound to the asynchronous message receiver
-            subscriber =
-                    Subscriber.newBuilder(subscriptionName, new MessageReceiverExample())
-                            .setCredentialsProvider(FixedCredentialsProvider.create(credentials)).
-                            setExecutorProvider(executorProvider)
-                            .build();
-            subscriber.addListener(
-                    new Subscriber.Listener() {
-                        @Override
-                        public void failed(Subscriber.State from, Throwable failure) {
-                        }
-                    }, MoreExecutors.directExecutor());
-            subscriber.startAsync().awaitRunning();
-            // why should I put sleep here??
-            //Thread.sleep(60000);
-        } catch (Exception e) {
+        PubSubMessageReceiver receiver = new PubSubMessageReceiver();
+        subscriber =
+                Subscriber.newBuilder(subscriptionName, receiver)
+                        .setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build();
+        subscriber.startAsync().awaitRunning();
+
+
+        class Server implements Runnable {
+
+            Subscriber subscriber = null;
+            GoogleCredentials credentials;
+
+            public Server(Subscriber subscriber, GoogleCredentials credentials1) {
+                this.subscriber = subscriber;
+                this.credentials = credentials1;
+            }
+
+            @Override
+            public void run() {
+
+                while (true) {
+                    PubsubMessage message = null;
+                    try {
+                        message = receiver.getMessages().take();
+                        sourceEventListener.onEvent("message :" + "\"" + message.getData().toStringUtf8()
+                                        + "\"" + " ",
+                                null);
+                    } catch (InterruptedException e) {
+                        log.error("Error receiving your message.");
+                    }
+
+                }
+            }
         }
-//        finally {
-//            if (subscriber != null) {
-//                subscriber.stopAsync().awaitTerminated();
-//            }
-//        }
+
+        Thread t = new Thread(new Server(subscriber, credentials));
+        t.start();
+
 
     }
 
@@ -326,7 +304,7 @@ public class GooglepubsubSource extends Source {
      */
     @Override
     public void pause() {
-   messageProcessor.pause();
+    messageProcessor.pause();
     }
 
     /**
