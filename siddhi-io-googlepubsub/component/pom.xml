@@ -54,10 +54,21 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.wso2.extension.siddhi.map.text</groupId>
             <artifactId>siddhi-map-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -113,14 +124,16 @@
                             org.wso2.extension.siddhi.io.googlepubsub.*
                         </Export-Package>
                         <Import-Package>
+                            !io.netty.*,
                             *;resolution:=optional
                         </Import-Package>
                         <Private-Package>
-                            io.*,
-                            com.*,
+                            io.grpc.*;-split-package:=merge-first,
+                            io.netty.*,
+                            com.google.*;-split-package:=merge-first,
                             org.threeten.*,
+                            io.opencensus.*,
                             org.apache.commons.codec.*;
-                            io.grpc.netty.shaded.*;
                         </Private-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Include-Resource>
