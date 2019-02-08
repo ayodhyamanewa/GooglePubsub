@@ -9,7 +9,6 @@ import org.wso2.extension.siddhi.io.googlepubsub.util.ResultContainer;
 import org.wso2.siddhi.core.SiddhiAppRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.event.Event;
-import org.wso2.siddhi.core.exception.SiddhiAppCreationException;
 import org.wso2.siddhi.core.stream.input.InputHandler;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
 import org.wso2.siddhi.query.api.exception.SiddhiAppValidationException;
@@ -86,7 +85,7 @@ public class TestCaseOfGooglepubsubSink {
      * {@link SiddhiAppValidationException} will be thrown.
      */
     @Test(expectedExceptions = { SiddhiAppValidationException.class })
-    public void GooglePubSubPublishWithoutProjectidTest() {
+    public void googlePubSubPublishWithoutProjectidTest() {
         log.info("Google Pub Sub Publish without projectid test");
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(
@@ -106,7 +105,7 @@ public class TestCaseOfGooglepubsubSink {
      * {@link SiddhiAppValidationException} will be thrown.
      */
     @Test(expectedExceptions = { SiddhiAppValidationException.class })
-    public void GooglePubSubPublishWithoutTopicidTest() {
+    public void googlePubSubPublishWithoutTopicidTest() {
         log.info("Google Pub Sub Publish without projectid test");
         SiddhiManager siddhiManager = new SiddhiManager();
         SiddhiAppRuntime siddhiAppRuntime = siddhiManager.createSiddhiAppRuntime(
